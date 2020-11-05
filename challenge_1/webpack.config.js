@@ -1,6 +1,6 @@
 var path = require("path");
 var SRC_DIR = path.join(__dirname, "/client/src");
-var DIST_DIR = path.join(__dirname, "/public/");
+var DIST_DIR = path.join(__dirname, "/public/dist");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 module.exports = {
   devtool: "source-map",

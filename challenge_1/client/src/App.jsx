@@ -14,6 +14,7 @@ import {
   TextInput,
   Heading,
   DataTable,
+  InfiniteScroll,
 } from "grommet";
 import { grommet, ThemeType } from "grommet/themes";
 import _ from "underscore";
@@ -45,38 +46,50 @@ const columns = [
 const App = () => {
   const [page, changePage] = useState(1);
   const [eventList, setEventList] = useState([]);
-  const [activeIndex, setActiveIndex] = useState([0]);
-  debugger;
-  // set react router page once on component mount
+  const [query, setQuery] = useState("");
+
+  // set react router page once on component mount and get initial list of events
   useEffect(() => {
-    const endpoint = window.location.pathname;
-    if (endpoint !== "/") {
-      let pageIndex = Number(endpoint.replace(/\//g, "").slice(-1));
-      pageIndex = pageIndex <= 0 || pageIndex === undefined ? 1 : pageIndex;
-      changePage(pageIndex);
-      history.push(`/page/${pageIndex}`);
-    } else {
-      changePage(1);
-      history.push(`/page/1`);
-    }
+    changePage(1);
+    history.push("/page/1");
   }, []);
 
-  // get event data from JSON server on page change, cancel async request on component unmount
-  useEffect(() => {
+  const getEvents = (query) => {
+    // get token to cancel axios call
     let source = axios.CancelToken.source();
-    history.push(`/page/${page}`);
+    // only get 10 at a time
+    let endpoint = `/api/events?_page=${page}&_limit=10`;
+    if (query.length) {
+      endpoint = `${endpoint}&q=${query}`;
+    }
     axios
-      .get(`/api/events?page=${page}&_limit=100`, {
+      .get(endpoint, {
         cancelToken: source.token,
       })
       .then((res) => {
-        // chunk into sub arrays of length 10
-        setEventList(_.chunk(res.data, 10));
+        setEventList([]);
+        setEventList(res.data);
       });
-    return () => {
+    return () =>
       source.cancel("Cancelled axios request during component unmount.");
-    };
+  };
+
+  // reset page on query change
+  useEffect(() => {
+    history.push("/page/1");
+    return getEvents(query);
+  }, [query]);
+
+  // get next list of results on page change
+  useEffect(() => {
+    history.push(`/page/${page}`);
+    return getEvents(query);
   }, [page]);
+
+  // update the query
+  const updateSearchField = (e) => {
+    setQuery(e.target.value);
+  };
 
   const numPages = 10;
   // add extra page to account for page #0
@@ -103,7 +116,7 @@ const App = () => {
             // dropTarget={boxRef.current}
             plain
             value={null}
-            onChange={null}
+            onChange={updateSearchField}
             onSelect={null}
             suggestions={null}
             placeholder="Search..."
@@ -113,16 +126,16 @@ const App = () => {
           {/* Map each page to a route */}
           {pageArray.map((page) => {
             return (
-              <Route path={`/page/${page}`}>
-                <Heading>{`Page #${page}`}</Heading>
-                <DataTable
-                  columns={columns.map((column) => ({
-                    ...column,
-                    search: column.property === "date",
-                  }))}
-                  data={eventList[page]}
-                  sortable
-                />
+              <Route path={`/page/${page + 1}`}>
+                <Box size="xlarge">
+                  <DataTable
+                    columns={columns.map((column) => ({
+                      ...column,
+                      search: column.property === "date",
+                    }))}
+                    data={eventList}
+                  />
+                </Box>
               </Route>
             );
           })}
@@ -131,7 +144,7 @@ const App = () => {
             nextLabel={"next"}
             breakLabel={"..."}
             breakClassName={"break-me"}
-            pageCount={eventList.length - 1}
+            pageCount={numPages}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
             onPageChange={(data) => {
