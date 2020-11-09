@@ -1,57 +1,47 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
-import ReactPaginate from "react-paginate";
-import { Router, Route } from "react-router";
-import history from "./history.js";
-import styled from "styled-components";
-import axios from "axios";
-import { Search } from "grommet-icons";
-import {
-  Box,
-  Image,
-  Grommet,
-  Text,
-  TextInput,
-  Heading,
-  DataTable,
-  InfiniteScroll,
-} from "grommet";
-import { grommet, ThemeType } from "grommet/themes";
-import _ from "underscore";
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import ReactPaginate from 'react-paginate';
+import { Router, Route } from 'react-router';
+import history from './history.js';
+import styled from 'styled-components';
+import axios from 'axios';
+import { Search } from 'grommet-icons';
+import { Box, Image, Grommet, Text, TextInput, Heading, DataTable, InfiniteScroll } from 'grommet';
+import { grommet, ThemeType } from 'grommet/themes';
+import _ from 'underscore';
 
 const columns = [
   {
-    property: "date",
+    property: 'date',
     header: <Text>Date</Text>,
-    render: (datum) =>
-      datum.date && new Date(datum.date).toLocaleDateString("en-US"),
+    render: (datum) => datum.date && new Date(datum.date).toLocaleDateString('en-US'),
     primary: true,
-    align: "end",
+    align: 'end',
   },
   {
-    property: "category1",
-    header: "category1",
+    property: 'category1',
+    header: 'category1',
   },
   {
-    property: "category2",
-    header: "category2",
+    property: 'category2',
+    header: 'category2',
   },
   {
-    property: "description",
-    header: "description",
-    align: "end",
+    property: 'description',
+    header: 'description',
+    align: 'end',
   },
 ];
 
 const App = () => {
   const [page, changePage] = useState(1);
+  const [numPages, setNumPages] = useState(0);
   const [eventList, setEventList] = useState([]);
-  const [query, setQuery] = useState("");
-
+  const [query, setQuery] = useState('');
   // set react router page once on component mount and get initial list of events
   useEffect(() => {
     changePage(1);
-    history.push("/page/1");
+    history.push('/page/1');
   }, []);
 
   const getEvents = (query) => {
@@ -67,16 +57,19 @@ const App = () => {
         cancelToken: source.token,
       })
       .then((res) => {
+        if (!numPages) {
+          // get number of objects from header, show only 10 per page
+          setNumPages(Math.ceil(res.headers['x-total-count'] / 10));
+        }
         setEventList([]);
         setEventList(res.data);
       });
-    return () =>
-      source.cancel("Cancelled axios request during component unmount.");
+    return () => source.cancel('Cancelled axios request during component unmount.');
   };
 
   // reset page on query change
   useEffect(() => {
-    history.push("/page/1");
+    history.push('/page/1');
     return getEvents(query);
   }, [query]);
 
@@ -91,23 +84,22 @@ const App = () => {
     setQuery(e.target.value);
   };
 
-  const numPages = 10;
   // add extra page to account for page #0
   const pageArray = [...Array(numPages + 1).keys()];
   return (
     <Grommet theme={grommet} full>
-      <Box background="dark-1" fill align="center" pad={{ top: "large" }}>
+      <Box background="dark-1" fill align="center" pad={{ top: 'large' }}>
         <Box
           direction="row"
           width="large"
           align="center"
-          pad={{ horizontal: "small", vertical: "xsmall" }}
+          pad={{ horizontal: 'small', vertical: 'xsmall' }}
           round="small"
-          pad={{ horizontal: "small", vertical: "xsmall" }}
+          pad={{ horizontal: 'small', vertical: 'xsmall' }}
           round="small"
           border={{
-            side: "all",
-            color: "border",
+            side: 'all',
+            color: 'border',
           }}
         >
           <Search color="brand" />
@@ -131,7 +123,7 @@ const App = () => {
                   <DataTable
                     columns={columns.map((column) => ({
                       ...column,
-                      search: column.property === "date",
+                      search: column.property === 'date',
                     }))}
                     data={eventList}
                   />
@@ -140,19 +132,19 @@ const App = () => {
             );
           })}
           <ReactPaginate
-            previousLabel={"previous"}
-            nextLabel={"next"}
-            breakLabel={"..."}
-            breakClassName={"break-me"}
+            previousLabel={'previous'}
+            nextLabel={'next'}
+            breakLabel={'...'}
+            breakClassName={'break-me'}
             pageCount={numPages}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
             onPageChange={(data) => {
               changePage(data.selected + 1);
             }}
-            containerClassName={"pagination"}
-            subContainerClassName={"pages pagination"}
-            activeClassName={"active"}
+            containerClassName={'pagination'}
+            subContainerClassName={'pages pagination'}
+            activeClassName={'active'}
           />
         </Router>
       </Box>
@@ -160,4 +152,4 @@ const App = () => {
   );
 };
 
-ReactDOM.render(<App />, document.getElementById("app"));
+ReactDOM.render(<App />, document.getElementById('app'));
